@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import firebase from "firebase/compat/app";
-import "firebase/compat/database";
 
 function CardForm({ onFormSubmit, selectedCard }) {
   const [formData, setFormData] = useState({

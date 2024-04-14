@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Card from "./Card";
 import CardForm from "./CardForm";
-import { addCard, getAllCards, deleteCard } from "../dbFunctions";
+import { wait } from "@testing-library/user-event/dist/utils";
 
 function Home() {
   const [cards, setCards] = useState([]);
@@ -11,30 +11,46 @@ function Home() {
     loadCards();
   }, []);
 
-  const loadCards = async () => {
-    const snapshot = await getAllCards();
-    const cardList = [];
-    snapshot.forEach((childSnapshot) => {
-      cardList.push({
-        id: childSnapshot.key,
-        ...childSnapshot.val(),
-      });
-    });
-    setCards(cardList);
+  const loadCards = () => {
+    fetch("http://localhost:8080/card")
+      .then((response) => response.json())
+      .then((data) => {
+        setCards(data.result);
+      })
+      .catch((error) => console.error("Error fetching data:", error));
   };
 
   const handleFormSubmit = async (formData) => {
-    await addCard(formData);
-    loadCards();
+    try {
+      await fetch("http://localhost:8080/card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error("Error adding card:", error);
+    }
   };
 
   const handleCardClick = (index) => {
     setSelectedCard(cards[index]);
   };
 
-  const handleDelete = async (cardId) => {
-    await deleteCard(cardId);
-    loadCards();
+  const deleteCard = async (index) => {
+    try {
+      await fetch(
+        `http://localhost:8080/card/delete?cardNumber=${cards[index].cardNumber}`,
+        {
+          method: "DELETE",
+        }
+      );
+      loadCards();
+    } catch (error) {
+      console.error("Error deleting card:", error);
+    }
   };
 
   return (
@@ -50,12 +66,12 @@ function Home() {
           />
         </div>
         <div className="w-1/2 m-5 space-y-4">
-          {cards.map((card) => (
+          {cards.map((card, index) => (
             <Card
-              key={card.id}
+              key={card.cardNumber}
               cardData={card}
-              onClick={() => handleCardClick(card.id)}
-              onDelete={() => handleDelete(card.id)}
+              onClick={() => handleCardClick(index)}
+              onDelete={() => deleteCard(index)}
             />
           ))}
         </div>
